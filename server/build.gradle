@@ -1,0 +1,36 @@
+plugins {
+	id "application"
+	id 'org.sonarqube' version '2.2'
+}
+
+mainClassName = "com.sailpoint.atlas.server.WMSServerApplication"
+
+applicationDefaultJvmArgs = ["-Xmx512m", "-Xms512m",
+							 "-Dfile.encoding=UTF-8",
+							 "-XX:+UseConcMarkSweepGC", "-XX:+CMSParallelRemarkEnabled",
+							 "-XX:+UseCMSInitiatingOccupancyOnly", "-XX:CMSInitiatingOccupancyFraction=70",
+							 "-XX:+ScavengeBeforeFullGC", "-XX:+CMSScavengeBeforeRemark",
+							 "-XX:+PrintGCDateStamps", "-verbose:gc", "-XX:+PrintGCDetails", "-Xloggc:/tmp/mantis_gc.log",
+							 "-XX:+UseGCLogFileRotation", "-XX:NumberOfGCLogFiles=10", "-XX:GCLogFileSize=100M"
+]
+
+run {
+	if (project.hasProperty('args')) {
+		args project.args.split('\\s+')
+	}
+	if (project.hasProperty('jvmArgs')) {
+		applicationDefaultJvmArgs.addAll(project.jvmArgs.split('\\s+'))
+	}
+}
+
+dependencies {
+	compile project(":workgroups")
+}
+
+sonarqube {
+	properties {
+		property "sonar.projectName", "Workgroup Management Server"
+		property "sonar.projectKey", "com.sailpoint:wms-server"
+		property "sonar.sources", "src/main/java"
+	}
+}

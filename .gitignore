@@ -1,0 +1,7 @@
+build
+.idea
+*.iml
+.gradle
+.DS_Store
+/debug.log
+velocity.log*
