@@ -1,0 +1,2 @@
+include ":wgms-workgroups"
+include ":wgms-server"

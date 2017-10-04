@@ -1,0 +1,22 @@
+plugins {
+	id 'org.sonarqube' version '2.2'
+}
+
+ext {
+	limits = [
+		'complexity': 0,
+	]
+}
+
+dependencies {
+	compile "com.sailpoint:atlas:$project.ATLAS_VERSION"
+	compile "com.sailpoint:atlas-health:$project.ATLAS_VERSION"
+}
+
+sonarqube {
+	properties {
+		property "sonar.projectName", "Workgroup Management Service"
+		property "sonar.projectKey", "com.sailpoint:workgroup-management-service"
+		property "sonar.sources", "src/main/java"
+	}
+}

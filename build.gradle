@@ -1,0 +1,154 @@
+buildscript {
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+		maven {
+			name "release"
+			url "http://sptcbu-mvn-repo.s3-website-us-east-1.amazonaws.com/release"
+		}
+		mavenLocal()
+	}
+
+	project.ext {
+		aspectjVersion = "1.8.10"
+	}
+
+	dependencies {
+		classpath "nl.eveoh:gradle-aspectj:1.6"
+	}
+}
+plugins {
+	id 'java'
+	id 'maven'
+	id 'jacoco'
+}
+
+subprojects { subproject ->
+	apply plugin: 'java'
+	apply plugin: 'maven'
+	apply plugin: 'jacoco'
+	apply plugin: 'aspectj'
+
+	group = "com.sailpoint"
+	version = project.hasProperty('customVersion') ? project['customVersion'] : 'integration-SNAPSHOT'
+
+	compileJava {
+		sourceCompatibility = '1.8'
+		targetCompatibility = '1.8'
+
+		options.encoding = 'UTF-8'
+	}
+
+	configurations {
+		deployer
+	}
+
+	dependencies {
+		deployer 'org.kuali.maven.wagons:maven-s3-wagon:1.2.1'
+
+		compile "com.sailpoint:atlas-test:$project.ATLAS_VERSION"
+
+		aspectpath "com.sailpoint:atlas:$project.ATLAS_VERSION"
+
+	}
+
+	repositories {
+		mavenCentral()
+		mavenLocal()
+
+		maven {
+			name "release"
+			url "http://sptcbu-mvn-repo.s3-website-us-east-1.amazonaws.com/release"
+		}
+
+		maven {
+			name "snapshot"
+			url "http://sptcbu-mvn-repo.s3-website-us-east-1.amazonaws.com/snapshot"
+		}
+	}
+
+	afterEvaluate { project ->
+		boolean isSnapshot = project.version.contains("SNAPSHOT")
+
+		project.uploadArchives {
+			repositories {
+				mavenDeployer {
+					configuration = configurations.deployer
+					repository(url: isSnapshot ? "s3://sptcbu-mvn-repo/snapshot" : "s3://sptcbu-mvn-repo/release") {
+					}
+				}
+			}
+		}
+
+	}
+
+	jacocoTestReport {
+		reports {
+			//XML required by coveralls and for the below coverage checks
+			xml.enabled true
+		}
+
+		afterEvaluate {
+			def coverageExclude = subproject.hasProperty('coverageExclude') ? subproject.coverageExclude : []
+
+			classDirectories = files(classDirectories.files.collect {
+				fileTree(dir: it, exclude: coverageExclude)
+			})
+		}
+
+		doLast {
+			if (!subproject.hasProperty('limits')) {
+				logger.quiet('skipping code coverage checks as no limits are defined')
+				return
+			}
+
+			def report = file("${jacoco.reportsDir}/test/jacocoTestReport.xml")
+			logger.lifecycle("Checking coverage results: ${report}")
+
+			def parser = new XmlParser()
+			parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+			def results = parser.parse(report)
+
+			def percentage = {
+				def covered = it.'@covered' as Double
+				def missed = it.'@missed' as Double
+				((covered / (covered + missed)) * 100).round(2)
+			}
+
+			def counters = results.counter
+			def metrics = [:]
+			metrics << [
+					'complexity': percentage(counters.find { it.'@type'.equals('COMPLEXITY') }),
+			]
+
+			def failures = []
+			metrics.each {
+				def limit = subproject.limits[it.key]
+				if (it.value < limit) {
+					failures.add("- ${it.key} coverage rate is: ${it.value}%, minimum is ${limit}%")
+				}
+			}
+
+			if (failures) {
+				logger.quiet("------------------ Code Coverage Failed -----------------------")
+				failures.each {
+					logger.quiet(it)
+				}
+				logger.quiet("---------------------------------------------------------------")
+				throw new GradleException("Code coverage failed")
+			} else {
+				logger.quiet("Passed Code Coverage Checks with ${metrics.complexity}% (minimum ${limits.complexity}%)")
+			}
+		}
+	}
+	subproject.check.dependsOn subproject.jacocoTestReport
+
+	test {
+		testLogging {
+			exceptionFormat = 'full'
+		}
+	}
+
+}
