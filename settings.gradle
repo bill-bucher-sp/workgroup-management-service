@@ -1,2 +1,2 @@
-include ":workgroups"
-include ":server"
+include ":wgms-workgroups"
+include ":wgms-server"

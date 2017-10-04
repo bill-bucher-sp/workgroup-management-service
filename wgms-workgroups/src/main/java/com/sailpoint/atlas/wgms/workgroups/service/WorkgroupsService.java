@@ -1,17 +1,11 @@
 /*
  * Copyright (C) 2017 SailPoint Technologies, Inc.  All rights reserved.
  */
-package com.sailpoint.atlas.workgroups.service;
+package com.sailpoint.atlas.wgms.workgroups.service;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.sailpoint.atlas.AtlasConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jboss.resteasy.util.HttpResponseCodes;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Singleton
 public class WorkgroupsService {

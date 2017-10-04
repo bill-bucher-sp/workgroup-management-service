@@ -3,7 +3,7 @@ plugins {
 	id 'org.sonarqube' version '2.2'
 }
 
-mainClassName = "com.sailpoint.atlas.server.WMSServerApplication"
+mainClassName = "com.sailpoint.atlas.wgms.server.WGMSServerApplication"
 
 applicationDefaultJvmArgs = ["-Xmx512m", "-Xms512m",
 							 "-Dfile.encoding=UTF-8",
@@ -24,7 +24,7 @@ run {
 }
 
 dependencies {
-	compile project(":workgroups")
+	compile project(":wgms-workgroups")
 }
 
 sonarqube {
