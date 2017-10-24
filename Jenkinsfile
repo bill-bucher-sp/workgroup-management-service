@@ -29,7 +29,7 @@ pipeline {
         JIRA_PROJECT = 'IDNIPANEMA'
 
         // The component name in Jira for the deployment ticket
-        JIRA_COMPONENT = ''
+        JIRA_COMPONENT = 'WGMS'
 
         // The name of the build artifact to generate
         BUILD_NUMBER = ${env.BUILD_NUMBER}
